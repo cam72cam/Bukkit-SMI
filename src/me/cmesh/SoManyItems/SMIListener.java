@@ -1,7 +1,6 @@
 package me.cmesh.SoManyItems;
 
 import java.util.*;
-import java.util.Map.Entry;
 
 import org.bukkit.*;
 import org.bukkit.command.Command;
@@ -22,7 +21,6 @@ public class SMIListener implements Listener {
 	
 	HashMap<UUID, Integer> position = new HashMap<UUID, Integer>();
 	HashMap<UUID, List<Recipe>> queue = new HashMap<UUID, List<Recipe>>();
-	//HashMap<Character, Integer> craftingmap = new HashMap<Character, Integer>();
 	
 	@SuppressWarnings("deprecation")
 	public SMIListener() {
@@ -65,16 +63,6 @@ public class SMIListener implements Listener {
 				allItems.add(item);
 			}
 		}
-		
-		/*craftingmap.put('a', 0);
-		craftingmap.put('b', 1);
-		craftingmap.put('c', 2);
-		craftingmap.put('d', 3);
-		craftingmap.put('e', 4);
-		craftingmap.put('f', 5);
-		craftingmap.put('g', 6);
-		craftingmap.put('h', 7);
-		craftingmap.put('i', 8);*/
 	}
 	
 	private void delayedOpenSMI(final Player p) {
@@ -119,14 +107,24 @@ public class SMIListener implements Listener {
 			
 			InventoryView invv = p.openWorkbench(null, true);
 			CraftingInventory inv  = (CraftingInventory) invv.getTopInventory();
-			
 			Map<Character, ItemStack> itemmap = sr.getIngredientMap();
-			ItemStack[] arr = new ItemStack[9];
 			
+			ItemStack[] arr = new ItemStack[9];
+			int ri = 0;
+			for (String map : sr.getShape()) {
+				int ci = 0;
+				for (char c : map.toCharArray()) {
+					ItemStack curr = itemmap.get(c);
+					arr[ci + ri*3] = curr;
+					ci++;
+				}
+				ri ++;
+			}
+			/*
 			for (Entry<Character, ItemStack> i : itemmap.entrySet()) {
 				int ind = i.getKey().charValue() - 97;
 				arr[ind] = i.getValue();
-			}
+			}*/
 			inv.setMatrix(arr);
 		}
 		if (r instanceof ShapelessRecipe) {
@@ -169,7 +167,7 @@ public class SMIListener implements Listener {
 		}
 		
 		Recipe r = rs.get(0);
-		rs.remove(rs.get(0));
+		rs.remove(r);
 		
 		queue.put(p.getUniqueId(), rs);
 		
