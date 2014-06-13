@@ -120,11 +120,6 @@ public class SMIListener implements Listener {
 				}
 				ri ++;
 			}
-			/*
-			for (Entry<Character, ItemStack> i : itemmap.entrySet()) {
-				int ind = i.getKey().charValue() - 97;
-				arr[ind] = i.getValue();
-			}*/
 			inv.setMatrix(arr);
 		}
 		if (r instanceof ShapelessRecipe) {
@@ -158,14 +153,15 @@ public class SMIListener implements Listener {
 	
 	private void NextRecipes(Player p) {
 		List<Recipe> rs = queue.get(p.getUniqueId());
-		//p.sendMessage("Next " + rs.size());
 		
 		if (rs.isEmpty()) {
 			queue.remove(p.getUniqueId());
 			p.closeInventory();
 			delayedOpenSMI(p);
+			return;
 		}
 		
+		//p.sendMessage("Next " + rs.size());
 		Recipe r = rs.get(0);
 		rs.remove(r);
 		
@@ -232,18 +228,14 @@ public class SMIListener implements Listener {
 	
 	@EventHandler
 	public void playerCloseInv(final org.bukkit.event.inventory.InventoryCloseEvent event) {
-		/*if (! (event.getPlayer() instanceof Player)) {
-			return;
-		}*/
-		
 		Player p = (Player) event.getPlayer(); 
 		UUID id = p.getUniqueId();
 		if (position.containsKey(id)) {
-			//((Player)event.getPlayer()).sendMessage("Close SMI");
+			//p.sendMessage("Close SMI");
 			event.getInventory().clear();
 			position.remove(id);
 		} else if (queue.containsKey(id)) {
-			//((Player)event.getPlayer()).sendMessage("Close craft");
+			//p.sendMessage("Close craft");
 			event.getInventory().clear();
 			delayedNextRecipes(p);
 		}
