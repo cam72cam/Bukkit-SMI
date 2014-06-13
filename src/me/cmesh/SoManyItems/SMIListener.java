@@ -17,52 +17,25 @@ import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.ShapelessRecipe;
 
 public class SMIListener implements Listener {
-	final List<ItemStack> allItems;
 	
 	HashMap<UUID, Integer> position = new HashMap<UUID, Integer>();
 	HashMap<UUID, List<Recipe>> queue = new HashMap<UUID, List<Recipe>>();
 	
-	@SuppressWarnings("deprecation")
-	public SMIListener() {
-		allItems = new ArrayList<ItemStack>();
-		for (Material mat : Material.values()) {
-			ItemStack item = new ItemStack(mat, 1);
-			switch (mat) {
-			case AIR:
-			case BED_BLOCK:
-			case PISTON_EXTENSION:
-			case PISTON_MOVING_PIECE:
-			case REDSTONE_WIRE:
-			case CROPS:
-			case BURNING_FURNACE:
-			case SIGN_POST:
-			case WOODEN_DOOR:
-			case WALL_SIGN:
-			case IRON_DOOR_BLOCK:
-			case GLOWING_REDSTONE_ORE:
-			case REDSTONE_TORCH_OFF:
-			case SUGAR_CANE_BLOCK:
-			case CAKE_BLOCK:
-			case DIODE_BLOCK_OFF:
-			case DIODE_BLOCK_ON:
-			case LOCKED_CHEST:
-			case PUMPKIN_STEM:
-			case MELON_STEM:
-			case NETHER_WARTS:
-			case BREWING_STAND:
-			case CAULDRON:
-			case REDSTONE_LAMP_ON:
-			case TRIPWIRE:
-			case FLOWER_POT:
-			case SKULL:
-			case REDSTONE_COMPARATOR_OFF:
-			case REDSTONE_COMPARATOR_ON:
-				break;
-			default:
-				//Bukkit.getLogger().info(allItems.size() +" "+ mat.name());
-				allItems.add(item);
+	private List<ItemStack> getAllItems() {
+		List<ItemStack> all = new ArrayList<ItemStack>();
+		
+		Recipe curr = null;
+		for (Iterator<Recipe> r  = Bukkit.getServer().recipeIterator(); r.hasNext(); curr = r.next()) {
+			if (curr != null) {
+				ItemStack res = curr.getResult();
+				res.setAmount(1);
+				if (!all.contains(res)) {
+					all.add(res);
+				}
 			}
 		}
+		
+		return all;
 	}
 	
 	private void delayedOpenSMI(final Player p) {
@@ -93,6 +66,8 @@ public class SMIListener implements Listener {
 	private Inventory generateInventory(int offset, Inventory inv) {
 		inv.clear();
 		int begginofset = offset == 0 ? 0 : 1;
+		
+		 List<ItemStack> allItems = getAllItems();
 		
 		for(int i = begginofset; i < Math.min(9*6-1, allItems.size() - offset); i++) {
 			int item = i + offset;
@@ -129,7 +104,7 @@ public class SMIListener implements Listener {
 			CraftingInventory inv  = (CraftingInventory) invv.getTopInventory();
 			
 			Collection<ItemStack> list = sr.getIngredientList();
-			ItemStack[] arr = new ItemStack[list.size()];
+			ItemStack[] arr = new ItemStack[9];
 			arr = list.toArray(arr);
 			inv.setMatrix(arr);
 		}
@@ -160,7 +135,6 @@ public class SMIListener implements Listener {
 			delayedOpenSMI(p);
 			return;
 		}
-		
 		//p.sendMessage("Next " + rs.size());
 		Recipe r = rs.get(0);
 		rs.remove(r);
@@ -182,11 +156,9 @@ public class SMIListener implements Listener {
 		UUID id = p.getUniqueId();
 		int slot = event.getRawSlot();
 		ItemStack item = event.getCurrentItem();
-		
-
-		//p.sendMessage(position.containsKey(id) + "");
-		
-		if (position.containsKey(id) && slot < 9*6) {
+				
+		if (position.containsKey(id)){
+			List<ItemStack> allItems = getAllItems();
 			event.setCancelled(true);
 			int offset = position.get(id);
 			
@@ -204,7 +176,7 @@ public class SMIListener implements Listener {
 			
 			
 
-			List<Recipe> recipies = Bukkit.getServer().getRecipesFor(new ItemStack(item.getType(), 1));
+			List<Recipe> recipies = Bukkit.getServer().getRecipesFor(item);
 			if (!recipies.isEmpty()) {
 				queue.put(id, recipies);
 				p.closeInventory();
@@ -216,7 +188,11 @@ public class SMIListener implements Listener {
 		if (queue.containsKey(id)) {
 			event.setCancelled(true);
 			if(item != null && item.getAmount() != 0) {
-				List<Recipe> recipies = Bukkit.getServer().getRecipesFor(new ItemStack(item.getType(), 1));
+				List<Recipe> recipies = Bukkit.getServer().getRecipesFor(item);
+				if (recipies.isEmpty()) {
+					recipies = Bukkit.getServer().getRecipesFor(new ItemStack(item.getType(), 1));//HACK
+				}
+				
 				if (!recipies.isEmpty()) {
 					queue.put(id, recipies);
 					p.closeInventory();
