@@ -1,0 +1,7 @@
+name: SoManyItems
+main: me.cmesh.SoManyItems.SoManyItems
+version: 1.0
+commands:
+   smi:
+      description: Open SMI
+      usage: /<command>
