@@ -183,6 +183,7 @@ public class SMIListener implements Listener {
 		int slot = event.getRawSlot();
 		ItemStack item = event.getCurrentItem();
 		
+
 		//p.sendMessage(position.containsKey(id) + "");
 		
 		if (position.containsKey(id) && slot < 9*6) {
@@ -202,8 +203,8 @@ public class SMIListener implements Listener {
 			}
 			
 			
-			
-			List<Recipe> recipies = Bukkit.getServer().getRecipesFor(item);
+
+			List<Recipe> recipies = Bukkit.getServer().getRecipesFor(new ItemStack(item.getType(), 1));
 			if (!recipies.isEmpty()) {
 				queue.put(id, recipies);
 				p.closeInventory();
@@ -213,11 +214,9 @@ public class SMIListener implements Listener {
 		}
 		
 		if (queue.containsKey(id)) {
-			//p.sendMessage("here");
 			event.setCancelled(true);
-			
 			if(item != null && item.getAmount() != 0) {
-				List<Recipe> recipies = Bukkit.getServer().getRecipesFor(item);
+				List<Recipe> recipies = Bukkit.getServer().getRecipesFor(new ItemStack(item.getType(), 1));
 				if (!recipies.isEmpty()) {
 					queue.put(id, recipies);
 					p.closeInventory();
