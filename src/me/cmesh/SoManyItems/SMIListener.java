@@ -144,6 +144,16 @@ public class SMIListener implements Listener {
 		ShowRecipe(p, r);
 	}
 	
+	private List<Recipe> filterRecipies(List<Recipe> list, ItemStack compare) {
+		List<Recipe> res = new ArrayList<Recipe>();
+		for(Recipe r : list) {
+			if (r.getResult().equals(compare)) {
+				res.add(r);
+			}
+		}
+		return res;
+	}
+	
 	
 	@EventHandler
 	public void playerInv(org.bukkit.event.inventory.InventoryClickEvent event) {
@@ -177,6 +187,7 @@ public class SMIListener implements Listener {
 			
 
 			List<Recipe> recipies = Bukkit.getServer().getRecipesFor(item);
+			recipies = filterRecipies(recipies, item);
 			if (!recipies.isEmpty()) {
 				queue.put(id, recipies);
 				p.closeInventory();
@@ -189,6 +200,7 @@ public class SMIListener implements Listener {
 			event.setCancelled(true);
 			if(item != null && item.getAmount() != 0) {
 				List<Recipe> recipies = Bukkit.getServer().getRecipesFor(item);
+				recipies = filterRecipies(recipies, item);
 				if (recipies.isEmpty()) {
 					recipies = Bukkit.getServer().getRecipesFor(new ItemStack(item.getType(), 1));//HACK
 				}
