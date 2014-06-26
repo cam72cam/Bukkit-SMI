@@ -6,6 +6,7 @@ import org.bukkit.*;
 import org.bukkit.command.Command;
 import org.bukkit.entity.Player;
 import org.bukkit.event.*;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.FurnaceRecipe;
@@ -34,6 +35,19 @@ public class SMIListener implements Listener {
 				if (!all.contains(res)) {
 					all.add(res);
 				}
+			}
+		}
+		
+		return all;
+	}
+	
+	private List<Recipe> getAllRecipes() {
+		List<Recipe> all = new ArrayList<Recipe>();
+		
+		Recipe curr = null;
+		for (Iterator<Recipe> r  = Bukkit.getServer().recipeIterator(); r.hasNext(); curr = r.next()) {
+			if (curr != null) {
+				all.add(curr);
 			}
 		}
 		
@@ -128,8 +142,8 @@ public class SMIListener implements Listener {
 	}
 	
 	private void NextRecipes(final Player p) {
-		UUID key = p.getUniqueId();
-		List<Recipe> rs = queue.get(key);
+		final UUID key = p.getUniqueId();
+		final List<Recipe> rs = queue.get(key);
 		Integer i = index.get(key);
 		
 		//Check for inv closed
@@ -158,7 +172,9 @@ public class SMIListener implements Listener {
 	
 				@Override
 				public void run() {
-					NextRecipes(p);
+					if (rs.equals(queue.get(key))) {
+						NextRecipes(p);
+					}
 				}
 				
 			}, 30l);
@@ -205,10 +221,14 @@ public class SMIListener implements Listener {
 				return;
 			}
 			
-			
+			List<Recipe> recipies = new ArrayList<Recipe>();
+			if (event.getClick() == ClickType.LEFT) {
+				recipies = Bukkit.getServer().getRecipesFor(item);
+				recipies = filterRecipies(recipies, item);
+			} else if (event.getClick() == ClickType.RIGHT) {
+				recipies = reverseLookup(item);
+			}
 
-			List<Recipe> recipies = Bukkit.getServer().getRecipesFor(item);
-			recipies = filterRecipies(recipies, item);
 			if (!recipies.isEmpty()) {
 				queue.put(id, recipies);
 				p.closeInventory();
@@ -221,8 +241,14 @@ public class SMIListener implements Listener {
 		if (queue.containsKey(id)) {
 			event.setCancelled(true);
 			if(item != null && item.getAmount() != 0) {
-				List<Recipe> recipies = Bukkit.getServer().getRecipesFor(item);
-				recipies = filterRecipies(recipies, item);
+				List<Recipe> recipies = new ArrayList<Recipe>();
+				if (event.getClick() == ClickType.LEFT) {
+					recipies = Bukkit.getServer().getRecipesFor(item);
+					recipies = filterRecipies(recipies, item);
+				} else if (event.getClick() == ClickType.RIGHT) {
+					recipies = reverseLookup(item);
+				}
+				
 				if (recipies.isEmpty()) {
 					recipies = Bukkit.getServer().getRecipesFor(new ItemStack(item.getType(), 1));//HACK
 				}
@@ -239,6 +265,70 @@ public class SMIListener implements Listener {
 		}
 	}
 	
+	//List found at https://github.com/sk89q/craftbook
+	private boolean isFuel(ItemStack item) {
+		 switch (item.getType()) {
+			 case COAL:
+			 case COAL_BLOCK:
+			 case LOG:
+			 case LOG_2:
+			 case LEAVES:
+			 case LEAVES_2:
+			 case WOOD:
+			 case WOOD_STEP:
+			 case SAPLING:
+			 case WOOD_AXE:
+			 case WOOD_HOE:
+			 case WOOD_PICKAXE:
+			 case WOOD_SPADE:
+			 case WOOD_SWORD:
+			 case WOOD_PLATE:
+			 case STICK:
+			 case FENCE:
+			 case FENCE_GATE:
+			 case WOOD_STAIRS:
+			 case TRAP_DOOR:
+			 case WORKBENCH:
+			 case CHEST:
+			 case TRAPPED_CHEST:
+			 case JUKEBOX:
+			 case NOTE_BLOCK:
+			 case HUGE_MUSHROOM_1:
+			 case HUGE_MUSHROOM_2:
+			 case BLAZE_ROD:
+			 case LAVA_BUCKET:
+			 case BOOKSHELF:
+			     return true;
+			 default:
+			     return false;
+	 	}
+	}
+	
+	private List<Recipe> reverseLookup(ItemStack item) {
+		List<Recipe> res = new ArrayList<Recipe>();
+		for(Recipe r : getAllRecipes()) {
+			if (r instanceof ShapedRecipe) {
+				ShapedRecipe sr = (ShapedRecipe)r;
+				if (sr.getIngredientMap().containsValue(item)) {
+					res.add(r);
+				}
+			}
+			if (r instanceof ShapelessRecipe) {
+				ShapelessRecipe sr = (ShapelessRecipe)r;
+				if (sr.getIngredientList().contains(item)) {
+					res.add(r);
+				}
+			}
+			if (r instanceof FurnaceRecipe) {
+				FurnaceRecipe fr = (FurnaceRecipe)r;
+				if (fr.getInput() == item || isFuel(item)) {
+					res.add(r);
+				}
+			}
+		}
+		return res;
+	}
+
 	@EventHandler
 	public void playerCloseInv(final org.bukkit.event.inventory.InventoryCloseEvent event) {
 		Player p = (Player) event.getPlayer(); 
