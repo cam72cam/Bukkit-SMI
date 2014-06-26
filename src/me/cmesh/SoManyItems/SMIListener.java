@@ -20,6 +20,8 @@ public class SMIListener implements Listener {
 	
 	HashMap<UUID, Integer> position = new HashMap<UUID, Integer>();
 	HashMap<UUID, List<Recipe>> queue = new HashMap<UUID, List<Recipe>>();
+	HashMap<UUID, Integer> index = new HashMap<UUID, Integer>();
+	HashMap<UUID, Boolean> isClosing = new HashMap<UUID, Boolean>();
 	
 	private List<ItemStack> getAllItems() {
 		List<ItemStack> all = new ArrayList<ItemStack>();
@@ -124,22 +126,42 @@ public class SMIListener implements Listener {
 		},2);
 	}
 	
-	private void NextRecipes(Player p) {
-		List<Recipe> rs = queue.get(p.getUniqueId());
+	private void NextRecipes(final Player p) {
+		UUID key = p.getUniqueId();
+		List<Recipe> rs = queue.get(key);
+		Integer i = index.get(key);
 		
-		if (rs.isEmpty()) {
-			queue.remove(p.getUniqueId());
-			p.closeInventory();
-			delayedOpenSMI(p);
+		//Check for inv closed
+		if (i == null) {
 			return;
 		}
-		//p.sendMessage("Next " + rs.size());
-		Recipe r = rs.get(0);
-		rs.remove(r);
 		
-		queue.put(p.getUniqueId(), rs);
+		isClosing.put(key, true);
+		p.closeInventory();
+		isClosing.put(key, false);
+		
+		//p.sendMessage("Next " + i);
+		Recipe r = rs.get(i);
+		
+		if (i + 1 == rs.size()) {
+			i = 0;
+		} else {
+			i++;
+		}
+		
+		index.put(p.getUniqueId(), i);
 		
 		ShowRecipe(p, r);
+		if(rs.size() > 1) {
+			Bukkit.getScheduler().scheduleSyncDelayedTask(SoManyItems.Instance, new Runnable() {
+	
+				@Override
+				public void run() {
+					NextRecipes(p);
+				}
+				
+			}, 30l);
+		}
 	}
 	
 	private List<Recipe> filterRecipies(List<Recipe> list, ItemStack compare) {
@@ -189,6 +211,7 @@ public class SMIListener implements Listener {
 			if (!recipies.isEmpty()) {
 				queue.put(id, recipies);
 				p.closeInventory();
+				index.put(id, 0);
 				delayedNextRecipes(p);
 			}
 			return;
@@ -204,8 +227,12 @@ public class SMIListener implements Listener {
 				}
 				
 				if (!recipies.isEmpty()) {
+					index.put(id, 0);
 					queue.put(id, recipies);
+					isClosing.put(id, true);
 					p.closeInventory();
+					isClosing.put(id, false);
+					NextRecipes(p);
 				}
 			}
 		}
@@ -220,9 +247,17 @@ public class SMIListener implements Listener {
 			event.getInventory().clear();
 			position.remove(id);
 		} else if (queue.containsKey(id)) {
-			//p.sendMessage("Close craft");
-			event.getInventory().clear();
-			delayedNextRecipes(p);
+			if (!isClosing.get(id)) {
+				//p.sendMessage("Close craft");
+				queue.remove(p.getUniqueId());
+				index.remove(p.getUniqueId());
+				
+				event.getInventory().clear();
+				
+				delayedOpenSMI(p);
+			} else {
+				event.getInventory().clear();
+			}
 		}
 	}
 }
