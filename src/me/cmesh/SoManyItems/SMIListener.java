@@ -103,10 +103,11 @@ public class SMIListener implements Listener {
 			InventoryView invv = p.openWorkbench(null, true);
 			CraftingInventory inv  = (CraftingInventory) invv.getTopInventory();
 			
-			Collection<ItemStack> list = sr.getIngredientList();
-			ItemStack[] arr = new ItemStack[9];
-			arr = list.toArray(arr);
-			inv.setMatrix(arr);
+			int index = 1;
+			for (ItemStack item : sr.getIngredientList()) {
+				inv.setItem(index, item);
+				index++;
+			}
 		}
 		if (r instanceof FurnaceRecipe) {
 			FurnaceRecipe fr = (FurnaceRecipe)r;
