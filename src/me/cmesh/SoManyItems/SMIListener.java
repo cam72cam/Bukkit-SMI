@@ -76,7 +76,7 @@ public class SMIListener implements Listener {
 		return inv;
 	}
 	
-	private void ShowRecipe(Player p, Recipe r) {
+	private void ShowRecipe(final Player p, Recipe r) {
 		if (r instanceof ShapedRecipe) {
 			ShapedRecipe sr = (ShapedRecipe)r;
 			
@@ -84,18 +84,16 @@ public class SMIListener implements Listener {
 			CraftingInventory inv  = (CraftingInventory) invv.getTopInventory();
 			Map<Character, ItemStack> itemmap = sr.getIngredientMap();
 			
-			ItemStack[] arr = new ItemStack[9];
 			int ri = 0;
 			for (String map : sr.getShape()) {
 				int ci = 0;
 				for (char c : map.toCharArray()) {
 					ItemStack curr = itemmap.get(c);
-					arr[ci + ri*3] = curr;
+					inv.setItem(ci + ri*3 + 1, curr);
 					ci++;
 				}
 				ri ++;
 			}
-			inv.setMatrix(arr);
 		}
 		if (r instanceof ShapelessRecipe) {
 			ShapelessRecipe sr = (ShapelessRecipe)r;
